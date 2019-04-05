@@ -1,0 +1,61 @@
+FROM ubuntu:16.04
+
+COPY bazel_release.pub.gpg /tmp/bazel_release.pub.gpg
+COPY sources.list.16.04 /etc/apt/sources.list
+COPY glibc_compat.h.16.04 /usr/include/glibc_compat.h
+
+ARG APT_NONINTERACTIVE='-y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold'
+
+RUN apt-get ${APT_NONINTERACTIVE} update
+RUN apt-get ${APT_NONINTERACTIVE} install ca-certificates gnupg
+
+RUN cat /tmp/bazel_release.pub.gpg | apt-key add -
+RUN echo "deb http://storage.googleapis.com/bazel-apt stable jdk1.8" >> /etc/apt/sources.list
+
+ARG PACKAGES="bazel \
+    build-essential \
+    clang-4.0 \
+    crossbuild-essential-arm64 \
+    crossbuild-essential-armhf \
+    git-core \
+    libc6-dev \
+    libc++-dev \
+    libc++-dev:arm64 \
+    libc++-dev:armhf \
+    libusb-1.0-0 \
+    libusb-1.0-0:arm64 \
+    libusb-1.0-0:armhf \
+    libc++abi-dev \
+    libc++abi-dev:arm64 \
+    libc++abi-dev:armhf \
+    libpython3-dev \
+    libpython3-dev:arm64 \
+    libpython3-dev:armhf \
+    python3-numpy \
+    libunwind-dev:armhf"
+
+RUN dpkg --add-architecture arm64
+RUN dpkg --add-architecture armhf
+RUN apt-get ${APT_NONINTERACTIVE} update
+RUN apt-get ${APT_NONINTERACTIVE} install -y ${PACKAGES}
+
+# Workaround for libc++/libc++abi bug on Raspbian
+#
+# Version of libc++/libc++abi:
+#   - Docker: 3.7.0
+#   - Raspbian(strech) : 3.5.2
+#
+# There is a bug in them which makes exceptions uncaught on Raspbian.
+#
+# This toolchain will download LLVM libc++/libc++abi (version 1:7.0) and
+# statically link it.
+RUN apt-get ${APT_NONINTERACTIVE} install -y wget
+RUN wget http://ftp.us.debian.org/debian/pool/main/l/llvm-toolchain-7/libc++-7-dev_7.0.1-8_armhf.deb
+RUN dpkg-deb -R libc++-7-dev_7.0.1-8_armhf.deb /tmp
+RUN wget http://ftp.us.debian.org/debian/pool/main/l/llvm-toolchain-7/libc++abi-7-dev_7.0.1-8_armhf.deb
+RUN dpkg-deb -R libc++abi-7-dev_7.0.1-8_armhf.deb /tmp
+# Copy .a for statically linkage.
+RUN cp -v /tmp/usr/lib/llvm-7/lib/libc++.a /usr/lib/arm-linux-gnueabihf
+RUN cp -v /tmp/usr/lib/llvm-7/lib/libc++abi.a /usr/lib/arm-linux-gnueabihf
+# Clean up.
+RUN rm libc++-7-dev_7.0.1-8_armhf.deb libc++abi-7-dev_7.0.1-8_armhf.deb
