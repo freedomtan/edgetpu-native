@@ -44,3 +44,4 @@ average time: 392.017 ms
 0.0352941: 458 458:bow tie, bow-tie, bowtie
 0.027451: 543 543:drumstick
 ```
+See [here](https://github.com/freedomtan/edge_tpu_python_scripts) for scripts using [Python API](https://coral.withgoogle.com/docs/edgetpu/api-intro/)
