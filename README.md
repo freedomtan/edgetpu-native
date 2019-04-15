@@ -12,7 +12,7 @@ Then we can get
 bazel-bin/edgetpu/cpp/examples/label_image/label_image
 ```
 
-With that, we can use it run either original quantized models on CPUs or Edge TPU's canned models on TPUs. E.g., with
+With that, we can use it to run either original quantized TFLite models on CPUs or Edge TPU's canned models on Edge TPUs. E.g., with
 ```
 bazel-bin/edgetpu/cpp/examples/label_image/label_image \
 -m  ~/work/edge_tpu_data/mobilenet_v1_1.0_224_quant_edgetpu.tflite \
